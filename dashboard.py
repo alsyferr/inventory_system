@@ -3,6 +3,7 @@ from tkinter import ttk
 from tkcalendar import DateEntry
 import pymysql
 from employees import employee_form
+from supplier import supplier_form
 
 
 # Functionality Part
@@ -80,6 +81,7 @@ supplier_button = Button(
     font=("times new roman", 20, "bold"),
     anchor="w",
     padx=10,
+    command=lambda: supplier_form(window),
 )
 supplier_button.pack(fill=X)
 

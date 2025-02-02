@@ -64,59 +64,6 @@ def treeview_data():
         connection.close()
 
 
-# def select_data(
-#     event,
-#     empid_entry,
-#     name_entry,
-#     email_entry,
-#     gender_combobox,
-#     dob_date_entry,
-#     contact_entry,
-#     employment_type_combobox,
-#     education_combobox,
-#     work_shift_combobox,
-#     address_text,
-#     doj_date_entry,
-#     salary_entry,
-#     usertype_combobox,
-#     password_entry,
-# ):
-#     index = employee_treeview.selection()
-#     content = employee_treeview.item(index)
-#     row = content["values"]
-#     clear_fields(
-#         empid_entry,
-#         name_entry,
-#         email_entry,
-#         gender_combobox,
-#         dob_date_entry,
-#         contact_entry,
-#         employment_type_combobox,
-#         education_combobox,
-#         work_shift_combobox,
-#         address_text,
-#         doj_date_entry,
-#         salary_entry,
-#         usertype_combobox,
-#         password_entry,
-#         False,
-#     )
-#     empid_entry.insert(0, row[0])
-#     name_entry.insert(0, row[1])
-#     email_entry.insert(0, row[2])
-#     gender_combobox.set(row[3])
-#     dob_date_entry.set_date(row[4])
-#     contact_entry.insert(0, row[5])
-#     employment_type_combobox.set(row[6])
-#     education_combobox.set(row[7])
-#     work_shift_combobox.set(row[8])
-#     address_text.insert(1.0, row[9])
-#     doj_date_entry.set_date(row[10])
-#     salary_entry.insert(0, row[11])
-#     usertype_combobox.set(row[12])
-#     password_entry.insert(0, row[13])
-
-
 def select_data(
     event,
     empid_entry,
@@ -320,36 +267,14 @@ def update_employee(
         cursor, connection = connect_database()
         if not cursor or not connection:
             return
-        cursor.execute("use inventory_system")
-        cursor.execute("SELECT * from employee_data WHERE empid=%s", (empid,))
-        current_data = cursor.fetchone()
-        current_data = current_data[1:]
-        print(current_data)
-        address = address.strip()
-        new_data = (
-            name,
-            email,
-            gender,
-            dob,
-            contact,
-            employment_type,
-            education,
-            work_shift,
-            address,
-            doj,
-            salary,
-            user_type,
-            password,
-        )
-        print(new_data)
+        try:
+            cursor.execute("use inventory_system")
+            cursor.execute("SELECT * from employee_data WHERE empid=%s", (empid,))
+            current_data = cursor.fetchone()
+            current_data = current_data[1:]
 
-        if current_data == new_data:
-            messagebox.showinfo("Information", "No changes detected")
-            return
-
-        cursor.execute(
-            "UPDATE employee_data SET name=%s, email=%s, gender=%s, dob=%s, contact=%s, employment_type=%s, education=%s, work_shift=%s, address=%s, doj=%s, salary=%s, usertype=%s, password=%s WHERE empid=%s",
-            (
+            address = address.strip()
+            new_data = (
                 name,
                 email,
                 gender,
@@ -363,12 +288,97 @@ def update_employee(
                 salary,
                 user_type,
                 password,
-                empid,
-            ),
+            )
+            if current_data == new_data:
+                messagebox.showinfo("Information", "No changes detected")
+                return
+            cursor.execute(
+                "UPDATE employee_data SET name=%s, email=%s, gender=%s, dob=%s, contact=%s, employment_type=%s, education=%s, work_shift=%s, address=%s, doj=%s, salary=%s, usertype=%s, password=%s WHERE empid=%s",
+                (
+                    name,
+                    email,
+                    gender,
+                    dob,
+                    contact,
+                    employment_type,
+                    education,
+                    work_shift,
+                    address,
+                    doj,
+                    salary,
+                    user_type,
+                    password,
+                    empid,
+                ),
+            )
+            connection.commit()
+            treeview_data()
+            messagebox.showinfo("Success", "Data is updated successfully")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error due to {e}")
+        finally:
+            cursor.close
+            connection.close()
+
+
+def delete_employee(
+    empid,
+):
+    selected = employee_treeview.selection()
+    if not selected:
+        messagebox.showerror("Error", "No row is selected")
+    else:
+        result = messagebox.askyesno(
+            "Confirm", "Do you really want to delete the record"
         )
-        connection.commit()
-        treeview_data()
-        messagebox.showinfo("Success", "Data is updated successfully")
+        if result:
+            cursor, connection = connect_database()
+            if not cursor or not connection:
+                return
+            try:
+                cursor.execute("use inventory_system")
+                cursor.execute("DELETE FROM employee_data where empid=%s", (empid,))
+                connection.commit()
+                treeview_data()
+                messagebox.showinfo("Sucess", "Record is deleted")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error due to {e}")
+            finally:
+                cursor.close
+                connection.close()
+
+
+def search_employee(search_option, value):
+    if search_option == "Search By":
+        messagebox.showerror("Error", "No option is selected")
+    elif value == "":
+        messagebox.showerror("Error", "Enter the value to search")
+    else:
+        search_option = search_option.replace(" ", "_")
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
+        try:
+            cursor.execute("use inventory_system")
+            cursor.execute(
+                f"SELECT * from employee_data WHERE {search_option} LIKE %s",
+                f"%{value}%",
+            )
+            records = cursor.fetchall()
+            employee_treeview.delete(*employee_treeview.get_children())
+            for record in records:
+                employee_treeview.insert("", END, value=record)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error due to {e}")
+        finally:
+            cursor.close
+            connection.close()
+
+
+def show_all(search_entry, search_combobox):
+    treeview_data()
+    search_entry.delete(0, END)
+    search_combobox.set("Search By")
 
 
 def employee_form(window):
@@ -378,7 +388,7 @@ def employee_form(window):
     employee_frame.place(x=200, y=100)
     headinglabel = Label(
         employee_frame,
-        text="Mange Employee Details",
+        text="Manage Employee Details",
         font=("times new roman", 16, "bold"),
         bg="#0f4d7d",
         fg="white",
@@ -403,7 +413,7 @@ def employee_form(window):
     search_frame.pack()
     search_combobox = ttk.Combobox(
         search_frame,
-        values=("Id", "Name", "Email"),
+        values=("EmpId", "Name", "Email", "Employment Type", "Education", "Work Shift"),
         font=("times new roman", 12),
         state="readonly",
     )
@@ -419,6 +429,7 @@ def employee_form(window):
         cursor="hand2",
         fg="white",
         bg="#0f4d7d",
+        command=lambda: search_employee(search_combobox.get(), search_entry.get()),
     )
     search_button.grid(row=0, column=2, padx=20)
     show_button = Button(
@@ -429,6 +440,7 @@ def employee_form(window):
         cursor="hand2",
         fg="white",
         bg="#0f4d7d",
+        command=lambda: show_all(search_entry, search_combobox),
     )
     show_button.grid(row=0, column=3)
 
@@ -452,12 +464,13 @@ def employee_form(window):
             "salary",
             "usertype",
         ),
-        show="headings",
         yscrollcommand=vertical_scrollbar.set,
         xscrollcommand=horizontal_scrollbar.set,
+        show="headings",
     )
     horizontal_scrollbar.pack(side=BOTTOM, fill=X)
     vertical_scrollbar.pack(side=RIGHT, fill=Y, pady=(10, 0))
+
     horizontal_scrollbar.config(command=employee_treeview.xview)
     vertical_scrollbar.config(command=employee_treeview.yview)
 
@@ -690,6 +703,9 @@ def employee_form(window):
         cursor="hand2",
         fg="white",
         bg="#0f4d7d",
+        command=lambda: delete_employee(
+            empid_entry.get(),
+        ),
     )
     delete_button.grid(row=0, column=2, padx=20)
 
