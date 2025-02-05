@@ -147,7 +147,7 @@ def add_supplier(invoice, name, contact, description, treeview):
             cursor.execute("USE inventory_system")
             cursor.execute("SELECT * from supplier_data WHERE invoice=%s", invoice)
             if cursor.fetchone():
-                messagebox.showerror("Error", "Id already exists")
+                messagebox.showerror("Error", "Invoice No. already exists")
                 return
             cursor.execute(
                 "CREATE TABLE IF NOT EXISTS supplier_data (invoice INT PRIMARY KEY,name VARCHAR(100), contact VARCHAR(15), description TEXT)"
@@ -403,3 +403,4 @@ def supplier_form(window):
             event, invoice_entry, name_entry, contact_entry, description_text, treeview
         ),
     )
+    return supplier_frame

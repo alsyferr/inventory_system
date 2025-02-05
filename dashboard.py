@@ -1,19 +1,104 @@
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk,messagebox
 from tkcalendar import DateEntry
 import pymysql
 from employees import employee_form
 from supplier import supplier_form
-
+from category import category_form
+from products import products_form
+from employees import connect_database
+import time
 
 # Functionality Part
 
+def update_time():
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+    
+    try:
+        cursor.execute("use inventory_system")
+        cursor.execute('SELECT * from employee_data')
+        emp_records=cursor.fetchall()
+        total_emp_count_label.config(text=len(emp_records))
+        
+        cursor.execute('SELECT * from supplier_data')
+        sup_records=cursor.fetchall()
+        total_sup_count_label.config(text=len(sup_records))
+        
+        cursor.execute('SELECT * from category_data')
+        cat_records=cursor.fetchall()
+        total_cat_count_label.config(text=len(cat_records))
+        
+        cursor.execute('SELECT * from product_data')
+        pro_records=cursor.fetchall()
+        total_prod_count_label.config(text=len(pro_records))
+        
+    except Exception as e:
+            messagebox.showerror("Error", f"Error due to {e}")
+    finally:
+        cursor.close
+        connection.close()
+        
+    
+    date_time=time.strftime('%I:%M:%S %p on  %A, %B %d, %Y')
+    subtitleLabel.config(text=f"Welcome Admin\t\t\t\t\t\t\t {date_time}")
+    subtitleLabel.after(1000,update_time)
 
+
+
+def tax_window():
+    def save_tax():
+        value=tax_count.get()
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
+        try:
+            cursor.execute("use inventory_system")
+            cursor.execute("CREATE TABLE IF NOT EXISTS tax_table (id INT Primary key, tax DECIMAL(5,2))")
+            cursor.execute('SELECT id from tax_table WHERE id=1')
+            if cursor.fetchone():
+                cursor.execute('UPDATE tax_table SET tax=%s WHERE id=1',value)
+            else:
+                cursor.execute('INSERT INTO tax_table (id,tax) VALUES(1,%s)',value)
+            connection.commit() 
+            messagebox.showinfo('Success',f'tax is set to {value}% and saved successfully.',parent=tax_root) 
+        except Exception as e:
+            messagebox.showerror("Error", f"Error due to {e}")
+        finally:
+            cursor.close
+            connection.close()
+
+    tax_root=Toplevel()
+    tax_root.title('Tax Window')
+    tax_root.geometry('300x200')
+    tax_root.grab_set()
+    tax_percentage=Label(tax_root,text='Enter Tax Percentage(%)',font=('arial',12))
+    tax_percentage.pack(pady=10)
+    tax_count=Spinbox(tax_root,from_=0, to=100,font=('arial',12))
+    tax_count.pack(pady=10)
+    
+    save_button = Button(
+    tax_root,
+    text=" Save",
+    font=("arial",12, "bold"),
+    bg='#4d636d',
+    fg='white', width=10, command=save_tax
+    )
+    save_button.pack(pady=20)
+
+current_frame=None
+def show_form(form_function):
+    global current_frame
+    if current_frame:
+        current_frame.place_forget()
+    current_frame=form_function(window)
+    
 # GUI Part
 window = Tk()
 
 window.title("Dashboard")
-window.geometry("1270x668+0+0")
+window.geometry("1270x675+0+0")
 window.resizable(0, 0)
 window.config(bg="white")
 
@@ -49,15 +134,14 @@ leftFrame = Frame(window)
 leftFrame.place(x=0, y=102)
 
 leftFrame = Frame(window)
-leftFrame.place(x=0, y=102, width=200, height=555)
+leftFrame.place(x=0, y=102, width=200, height=570)
 
 
 logoImage = PhotoImage(file="logo.png")
 imageLabel = Label(leftFrame, image=logoImage)
 imageLabel.pack()
 
-menuLabel = Label(leftFrame, text="Menu", font=("times new roman", 20), bg="#009688")
-menuLabel.pack(fill=X)
+
 
 employee_icon = PhotoImage(file="employee.png")
 employee_button = Button(
@@ -68,7 +152,7 @@ employee_button = Button(
     font=("times new roman", 20, "bold"),
     anchor="w",
     padx=10,
-    command=lambda: employee_form(window),
+    command=lambda: show_form(employee_form),
 )
 employee_button.pack(fill=X)
 
@@ -81,7 +165,7 @@ supplier_button = Button(
     font=("times new roman", 20, "bold"),
     anchor="w",
     padx=10,
-    command=lambda: supplier_form(window),
+    command=lambda: show_form(supplier_form),
 )
 supplier_button.pack(fill=X)
 
@@ -94,6 +178,7 @@ category_button = Button(
     font=("times new roman", 20, "bold"),
     anchor="w",
     padx=10,
+    command=lambda: show_form(category_form),
 )
 category_button.pack(fill=X)
 
@@ -106,6 +191,7 @@ products_button = Button(
     font=("times new roman", 20, "bold"),
     anchor="w",
     padx=10,
+    command=lambda: show_form(products_form)
 )
 products_button.pack(fill=X)
 
@@ -120,6 +206,19 @@ sales_button = Button(
     padx=10,
 )
 sales_button.pack(fill=X)
+
+tax_icon = PhotoImage(file="tax.png")
+tax_button = Button(
+    leftFrame,
+    image=tax_icon,
+    compound=LEFT,
+    text=" Tax",
+    font=("times new roman", 20, "bold"),
+    anchor="w",
+    padx=10,
+    command=tax_window
+)
+tax_button.pack(fill=X)
 
 exit_icon = PhotoImage(file="exit.png")
 exit_button = Button(
@@ -188,21 +287,21 @@ total_cat_count_label = Label(
 )
 total_cat_count_label.pack()
 
-prod_frame = Frame(window, bg="#2C3E50", bd=3, relief=RIDGE)
+prod_frame = Frame(window, bg="#2980B9", bd=3, relief=RIDGE)
 prod_frame.place(x=800, y=310, height=170, width=280)
 total_prod_icon = PhotoImage(file="total_prod.png")
-total_prod_icon_label = Label(prod_frame, image=total_prod_icon, bg="#2C3E50")
+total_prod_icon_label = Label(prod_frame, image=total_prod_icon, bg="#2980B9")
 total_prod_icon_label.pack(pady=10)
 total_prod_label = Label(
     prod_frame,
     text="Total Products",
-    bg="#2C3E50",
+    bg="#2980B9",
     fg="white",
     font=("times new roman", 15, "bold"),
 )
 total_prod_label.pack()
 total_prod_count_label = Label(
-    prod_frame, text="0", bg="#2C3E50", fg="white", font=("times new roman", 30, "bold")
+    prod_frame, text="0", bg="#2980B9", fg="white", font=("times new roman", 30, "bold")
 )
 total_prod_count_label.pack()
 
@@ -229,4 +328,6 @@ total_sales_count_label = Label(
 )
 total_sales_count_label.pack()
 
+update_time()
 window.mainloop()
+

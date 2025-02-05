@@ -751,19 +751,19 @@ def employee_form(window):
     employee_treeview.heading("salary", text="Salary")
     employee_treeview.heading("usertype", text="User Type")
 
-    employee_treeview.column("empid", width=60)
-    employee_treeview.column("name", width=140)
-    employee_treeview.column("email", width=180)
-    employee_treeview.column("gender", width=80)
-    employee_treeview.column("contact", width=100)
-    employee_treeview.column("dob", width=100)
-    employee_treeview.column("employment_type", width=120)
-    employee_treeview.column("education", width=120)
-    employee_treeview.column("work_shift", width=100)
-    employee_treeview.column("address", width=200)
-    employee_treeview.column("doj", width=100)
-    employee_treeview.column("salary", width=140)
-    employee_treeview.column("usertype", width=120)
+    # employee_treeview.column("empid", width=60)
+    # employee_treeview.column("name", width=140)
+    # employee_treeview.column("email", width=180)
+    # employee_treeview.column("gender", width=80)
+    # employee_treeview.column("contact", width=100)
+    # employee_treeview.column("dob", width=100)
+    # employee_treeview.column("employment_type", width=120)
+    # employee_treeview.column("education", width=120)
+    # employee_treeview.column("work_shift", width=100)
+    # employee_treeview.column("address", width=200)
+    # employee_treeview.column("doj", width=100)
+    # employee_treeview.column("salary", width=140)
+    # employee_treeview.column("usertype", width=120)
 
     treeview_data()
     employee_treeview.bind(
@@ -787,3 +787,4 @@ def employee_form(window):
         ),
     )
     create_database_table()
+    return employee_frame
